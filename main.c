@@ -1,12 +1,12 @@
 /*
  * File:   main.c
  * Author: dkg
- *
+ * PIC12F683 - ultrasonic music composer. 
+ * Buzzer range 300Hz to 6000Hz (3000Hz effective)
  * Created on March 2, 2017, 10:48 PM
  */
 
 #pragma config FOSC = INTOSCIO // Oscillator Selection bits (INTOSC oscillator: 
-
 //CLKOUT function on RA4/OSC2/CLKOUT pin, I/O function on RA5/OSC1/CLKIN)
 #pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
 #pragma config PWRTE = OFF      // Power-up Timer Enable bit (PWRT disabled)
@@ -23,7 +23,6 @@
 #define US_TRIG 0x20 //GPIO 5
 #define T1GP 0x10 // GPIO 4
 
-
 #define _XTAL_FREQ 4000000
 
 #include <xc.h>
@@ -34,76 +33,53 @@ int pwmGenerator(int freq);
 void err(void);
 
 void main(void) {
-    init();
-    /*
-        PR2 = 30;
-        T2CON = 0b00000101;
-        CCPR1L = 0b00001111;// 0b10101110;    
-        CCP1CON = 0b00011100;//0b00111100;
-     */
-
-    //  if (!pwmGenerator(300)) {
-    //     err();
-    // }
-
-    static bit t1gp_high, got_dist, trig;
     unsigned int pulse_width, dist = 0;
-    t1gp_high = 0;
-    got_dist = 0;
-    trig = 0;
 
+    init();
 
     while (1) {
-
         // Send a Trigger pulse to ultrasonic sensor.
-        if (!trig && t1gp_high == 0 && !(GPIO & T1GP)) {
-            GPIO |= US_TRIG;
-            __delay_us(10);
-            GPIO &= ~US_TRIG;
-            trig = 1;
-        }
+        GPIO |= US_TRIG;
+        __delay_us(10);
+        GPIO &= ~US_TRIG;
 
-        // Measure return pulse.
-        //Check to see if T1GP goes HIGH
-        if (t1gp_high == 0 && (GPIO & T1GP)) {
-            t1gp_high = 1;
-            pulse_width = 0;
-        }
+        // Wait for line to go high.
+        while (!(GPIO & T1GP));
 
-        // Check to see if T1GP went LOW after going high 
-        if (t1gp_high == 1 && !(GPIO & T1GP)) {
-            pulse_width = TMR1H; // Read the value of timer
-            pulse_width = (pulse_width << 8) | TMR1L;
-            TMR1L = 0;
-            TMR1H = 0;
-            t1gp_high = 0;
-            got_dist = 1;
-        }
+        // Wait for line to go low after going high.
+        while (GPIO & T1GP);
+   
+        pulse_width = TMR1H; 
+        pulse_width = (pulse_width << 8) | TMR1L;
+        TMR1L = 0;
+        TMR1H = 0;
+        dist = pulse_width / 58.82;
 
-        if (got_dist) {
-            got_dist = 0;
-            trig = 0;
-            dist = pulse_width / 58.82;
-            pwmGenerator(dist*10);
-            __delay_ms(100);
+        // Keep the frequency between 300Hz to 3000Hz 
+        // and reduce sensitivity to 2 cm.
+        if (dist > 5 && dist < 64) {
+            pwmGenerator((dist/2 - 5)*100 + 300 );
+            continue;
         }
-
+        
+        pwmGenerator(10000);
 
     }
 
     return;
 }
 
+// init initializes the pic.
+
 void init(void) {
-    // Basic Pic init.
+    // Basic Pic initialization.
     OSCCON = 0x70;
     GPIO = 0x00;
     ANSEL = 0x00;
-    TRISIO = 0x00;
-    ADCON0 = 0x00; // Disable AD convertors.
+    TRISIO = 0x00; // Setup GPIO as output.
+    ADCON0 = 0x00; // Disable AD.
     CMCON0 = 0x7;
     WPU = 0x00;
-
 
     // Initialize Timer 1 in Gating Mode to calculate pulse width.
     TRISIO |= T1GP;
@@ -111,66 +87,54 @@ void init(void) {
     T1GSS = 1; //Set Gate Source as T1g
     TMR1L = 0;
     TMR1H = 0;
-
 }
 
-// pwmGenerator generates the pwm wave with frequency freq.It returns zero
+// pwmGenerator generates the pwm wave with frequency freq. It returns zero
 // if its unable to calculate the values.
 
 int pwmGenerator(int freq) {
-    float period, tosc = 0;
-    int pr2, scaler, ccp;
-    float duty = 0.5;
+    float period, tosc = 0, duty = 0.4;
+    int pr2, scaler, ccp = 0;
+    static bit got = 0;
 
     period = 1 / (float) freq;
     tosc = 1 / (float) _XTAL_FREQ;
 
     // Selecting a prescalar value  (1,4,16) for TMR2.
     for (scaler = 1; scaler <= 16; scaler = scaler * 4) {
-        pr2 = period / (4 * tosc * scaler) - 1;
-        ccp = duty * 4 * (pr2 + 1);
-        // check for bounds.
+        pr2 = period / (4 * tosc * scaler) - 1; // Calculate pwm period.
+        ccp = duty * 4 * (pr2 + 1); // Calculate pwm duty.
+
+        // check for bounds. PR2 is 8 bit and CCP1RL:CCP1CON<5:4> is 10 bit.
         if (pr2 <= 255 && ccp <= 1023) {
-            break;
+            // Setup PWM parameters. PR2, T2CON, CCPR1L & CCP1CON.    
+            PR2 = pr2;
+            switch (scaler) {
+                case 1:
+                    T2CON = 0b00000100;
+                    break;
+                case 4:
+                    T2CON = 0b00000101;
+                    break;
+                case 16:
+                    T2CON = 0b00000110;
+                    break;
+                default:
+                    T2CON = 0b00000100;
+                    break;
+            }
+            CCPR1L = ccp >> 2;
+            int lsb = (ccp & 11) << 4;
+            CCP1CON = 0b00001100 | lsb;
+            return 1;
         }
-        pr2 = 0;
-        ccp = 0;
     }
-
-    if (pr2) {
-        // Setup PWM params.
-        PR2 = pr2;
-
-        // Setup TMR2 prescalar.    
-        switch (scaler) {
-            case 1:
-                T2CON = 0b00000100;
-                break;
-            case 4:
-                T2CON = 0b00000101;
-                break;
-            case 16:
-                T2CON = 0b00000110;
-                break;
-            default:
-                T2CON = 0b00000100;
-                break;
-        }
-
-        int lsb = 0;
-        // TODO: PWM duty cycle needs to be calculated for prescalar change..
-        CCPR1L = ccp >> 2;
-        lsb = (ccp & 11) << 4;
-
-
-        CCP1CON = 0b00001100 | lsb;
-        return 1;
-    }
-
     return 0;
 }
 
-void err(void) {
+// errTone generates a tone for error notification.
+
+void errTone(void) {
     PR2 = 0b01111100;
     T2CON = 0b00000101;
     CCPR1L = 0b00111110;
@@ -194,6 +158,5 @@ void err(void) {
     CCP1CON = 0b00011100;
     __delay_ms(500);
     __delay_ms(500);
-
 }
 
