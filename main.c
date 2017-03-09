@@ -24,18 +24,36 @@
 #define T1GP 0x10 // GPIO 4
 
 #define _XTAL_FREQ 4000000
+#define TOSC (1 / (float) _XTAL_FREQ)
+#define DUTY 0.4 // PWM Duty Cycle.
+#define STEP 3 // Dist in cm when the note changes.
+#define P(x) pwmGenerator(x)
+#define S(x) __delay_ms(x*400)
 
 #include <xc.h>
+
+// Frequency Table of notes.
+#define C 2441
+#define D 2741
+#define E 3048
+#define F 3255
+#define G 3654
+#define A 4058
+#define B 4562
+#define C2 4882
 
 // Function declarations.
 void init(void);
 int pwmGenerator(int freq);
 void err(void);
+void playIntro(void);
 
 void main(void) {
-    unsigned int pulse_width, dist = 0;
+    unsigned int pulse_width = 0;
+    unsigned char dist = 0;
 
     init();
+    playIntro();
 
     while (1) {
         // Send a Trigger pulse to ultrasonic sensor.
@@ -48,8 +66,8 @@ void main(void) {
 
         // Wait for line to go low after going high.
         while (GPIO & T1GP);
-   
-        pulse_width = TMR1H; 
+
+        pulse_width = TMR1H;
         pulse_width = (pulse_width << 8) | TMR1L;
         TMR1L = 0;
         TMR1H = 0;
@@ -58,15 +76,79 @@ void main(void) {
         // Keep the frequency between 300Hz to 3000Hz 
         // and reduce sensitivity to 2 cm.
         if (dist > 5 && dist < 64) {
-            pwmGenerator((dist/2 - 5)*100 + 300 );
+            //  pwmGenerator((dist / 2 - 5)*100 + 300);
+            if ((dist - 5) / STEP == 0) {
+                P(C);
+                S(1);
+            }
+            if ((dist - 5) / STEP == 1) {
+                P(D);
+                S(1);
+            }
+            if ((dist - 5) / STEP == 2) {
+                P(E);
+                S(1);
+            }
+            if ((dist - 5) / STEP == 3) {
+                P(F);
+                S(1);
+            }
+            if ((dist - 5) / STEP == 4) {
+                P(G);
+                S(1);
+            }
+            if ((dist - 5) / STEP == 5) {
+                P(A);
+                S(1);
+            }
+            if ((dist - 5) / STEP == 6) {
+                P(B);
+                S(1);
+            }
+            if ((dist - 5) / STEP == 7) {
+                P(C2);
+                S(1);
+            }
             continue;
         }
-        
-        pwmGenerator(10000);
-
+        pwmGenerator(20000);
     }
 
     return;
+}
+
+
+// playIntro plays a song.
+
+void playIntro(void) {
+    P(C);
+    S(1);
+    P(C);
+    S(1);
+    P(G);
+    S(1);
+    P(G);
+    S(1);
+    P(A);
+    S(1);
+    P(A);
+    S(1);
+    P(G);
+    S(2);
+    P(F);
+    S(1);
+    P(F);
+    S(1);
+    P(E);
+    S(1);
+    P(E);
+    S(1);
+    P(D);
+    S(1);
+    P(D);
+    S(1);
+    P(C);
+    S(1);
 }
 
 // init initializes the pic.
@@ -93,17 +175,14 @@ void init(void) {
 // if its unable to calculate the values.
 
 int pwmGenerator(int freq) {
-    float period, tosc = 0, duty = 0.4;
     int pr2, scaler, ccp = 0;
     static bit got = 0;
-
-    period = 1 / (float) freq;
-    tosc = 1 / (float) _XTAL_FREQ;
+    freq = freq / 2;
 
     // Selecting a prescalar value  (1,4,16) for TMR2.
     for (scaler = 1; scaler <= 16; scaler = scaler * 4) {
-        pr2 = period / (4 * tosc * scaler) - 1; // Calculate pwm period.
-        ccp = duty * 4 * (pr2 + 1); // Calculate pwm duty.
+        pr2 = (1 / (float) freq) / (4 * TOSC * scaler) - 1; // Calculate pwm period.
+        ccp = DUTY * 4 * (pr2 + 1); // Calculate pwm duty.
 
         // check for bounds. PR2 is 8 bit and CCP1RL:CCP1CON<5:4> is 10 bit.
         if (pr2 <= 255 && ccp <= 1023) {
@@ -130,33 +209,5 @@ int pwmGenerator(int freq) {
         }
     }
     return 0;
-}
-
-// errTone generates a tone for error notification.
-
-void errTone(void) {
-    PR2 = 0b01111100;
-    T2CON = 0b00000101;
-    CCPR1L = 0b00111110;
-    CCP1CON = 0b00011100;
-    __delay_ms(500);
-    __delay_ms(500);
-    __delay_ms(500);
-
-    PR2 = 0b00110001;
-    T2CON = 0b00000101;
-    CCPR1L = 0b00011000;
-    CCP1CON = 0b00111100;
-    __delay_ms(500);
-    __delay_ms(500);
-    __delay_ms(500);
-    __delay_ms(500);
-
-    PR2 = 0b01111100;
-    T2CON = 0b00000100;
-    CCPR1L = 0b00111110;
-    CCP1CON = 0b00011100;
-    __delay_ms(500);
-    __delay_ms(500);
 }
 

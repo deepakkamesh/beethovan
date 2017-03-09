@@ -2,9 +2,8 @@
 # 1 "main.c"
 
 
-# 8
+# 9
 #pragma config FOSC = INTOSCIO
-
 
 #pragma config WDTE = OFF
 #pragma config PWRTE = OFF
@@ -1048,62 +1047,116 @@ extern unsigned char __resetbits;
 extern __bit __powerdown;
 extern __bit __timeout;
 
-# 32 "main.c"
+# 46 "main.c"
 void init(void);
 int pwmGenerator(int freq);
 void err(void);
+void playIntro(void);
 
 void main(void) {
+unsigned int pulse_width = 0;
+unsigned char dist = 0;
+
 init();
-
-# 49
-static bit t1gp_high, got_dist, trig;
-unsigned int pulse_width, dist = 0;
-t1gp_high = 0;
-got_dist = 0;
-trig = 0;
-
+playIntro();
 
 while (1) {
 
-
-if (!trig && t1gp_high == 0 && !(GPIO & 0x10)) {
 GPIO |= 0x20;
 _delay((unsigned long)((10)*(4000000/4000000.0)));
 GPIO &= ~0x20;
-trig = 1;
-}
 
 
-
-if (t1gp_high == 0 && (GPIO & 0x10)) {
-t1gp_high = 1;
-pulse_width = 0;
-}
+while (!(GPIO & 0x10));
 
 
-if (t1gp_high == 1 && !(GPIO & 0x10)) {
+while (GPIO & 0x10);
+
 pulse_width = TMR1H;
 pulse_width = (pulse_width << 8) | TMR1L;
 TMR1L = 0;
 TMR1H = 0;
-t1gp_high = 0;
-got_dist = 1;
-}
-
-if (got_dist) {
-got_dist = 0;
-trig = 0;
 dist = pulse_width / 58.82;
-pwmGenerator(dist*10);
-_delay((unsigned long)((100)*(4000000/4000.0)));
+
+
+
+if (dist > 5 && dist < 64) {
+
+if ((dist - 5) / 3 == 0) {
+pwmGenerator(2441);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
 }
-
-
+if ((dist - 5) / 3 == 1) {
+pwmGenerator(2741);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+if ((dist - 5) / 3 == 2) {
+pwmGenerator(3048);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+if ((dist - 5) / 3 == 3) {
+pwmGenerator(3255);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+if ((dist - 5) / 3 == 4) {
+pwmGenerator(3654);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+if ((dist - 5) / 3 == 5) {
+pwmGenerator(4058);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+if ((dist - 5) / 3 == 6) {
+pwmGenerator(4562);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+if ((dist - 5) / 3 == 7) {
+pwmGenerator(4882);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+continue;
+}
+pwmGenerator(20000);
 }
 
 return;
 }
+
+
+
+
+void playIntro(void) {
+pwmGenerator(2441);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(2441);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(3654);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(3654);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(4058);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(4058);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(3654);
+_delay((unsigned long)((2*400)*(4000000/4000.0)));
+pwmGenerator(3255);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(3255);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(3048);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(3048);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(2741);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(2741);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+pwmGenerator(2441);
+_delay((unsigned long)((1*400)*(4000000/4000.0)));
+}
+
+
 
 void init(void) {
 
@@ -1116,43 +1169,30 @@ CMCON0 = 0x7;
 WPU = 0x00;
 
 
-
 TRISIO |= 0x10;
 T1CON = 0b11010001;
 T1GSS = 1;
 TMR1L = 0;
 TMR1H = 0;
-
 }
 
 
 
 
 int pwmGenerator(int freq) {
-float period, tosc = 0;
-int pr2, scaler, ccp;
-float duty = 0.5;
-
-period = 1 / (float) freq;
-tosc = 1 / (float) 4000000;
+int pr2, scaler, ccp = 0;
+static bit got = 0;
+freq = freq / 2;
 
 
 for (scaler = 1; scaler <= 16; scaler = scaler * 4) {
-pr2 = period / (4 * tosc * scaler) - 1;
-ccp = duty * 4 * (pr2 + 1);
+pr2 = (1 / (float) freq) / (4 * (1 / (float) 4000000) * scaler) - 1;
+ccp = 0.4 * 4 * (pr2 + 1);
+
 
 if (pr2 <= 255 && ccp <= 1023) {
-break;
-}
-pr2 = 0;
-ccp = 0;
-}
-
-if (pr2) {
 
 PR2 = pr2;
-
-
 switch (scaler) {
 case 1:
 T2CON = 0b00000100;
@@ -1167,44 +1207,12 @@ default:
 T2CON = 0b00000100;
 break;
 }
-
-int lsb = 0;
-
 CCPR1L = ccp >> 2;
-lsb = (ccp & 11) << 4;
-
-
+int lsb = (ccp & 11) << 4;
 CCP1CON = 0b00001100 | lsb;
 return 1;
 }
-
-return 0;
 }
-
-void err(void) {
-PR2 = 0b01111100;
-T2CON = 0b00000101;
-CCPR1L = 0b00111110;
-CCP1CON = 0b00011100;
-_delay((unsigned long)((500)*(4000000/4000.0)));
-_delay((unsigned long)((500)*(4000000/4000.0)));
-_delay((unsigned long)((500)*(4000000/4000.0)));
-
-PR2 = 0b00110001;
-T2CON = 0b00000101;
-CCPR1L = 0b00011000;
-CCP1CON = 0b00111100;
-_delay((unsigned long)((500)*(4000000/4000.0)));
-_delay((unsigned long)((500)*(4000000/4000.0)));
-_delay((unsigned long)((500)*(4000000/4000.0)));
-_delay((unsigned long)((500)*(4000000/4000.0)));
-
-PR2 = 0b01111100;
-T2CON = 0b00000100;
-CCPR1L = 0b00111110;
-CCP1CON = 0b00011100;
-_delay((unsigned long)((500)*(4000000/4000.0)));
-_delay((unsigned long)((500)*(4000000/4000.0)));
-
+return 0;
 }
 

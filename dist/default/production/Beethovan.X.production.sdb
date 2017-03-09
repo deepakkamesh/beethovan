@@ -3,6 +3,8 @@
 [d edition pro ]
 [d chip 12F683 ]
 [d frameptr 6 ]
+"6 /Applications/microchip/xc8/v1.41/sources/common/awdiv.c
+[v ___awdiv __awdiv `(i  1 e 2 0 ]
 "32 /Applications/microchip/xc8/v1.41/sources/common/awtoft.c
 [v ___awtoft __awtoft `(f  1 e 3 0 ]
 "62 /Applications/microchip/xc8/v1.41/sources/common/float.c
@@ -17,17 +19,17 @@
 [v ___fttol __fttol `(l  1 e 4 0 ]
 "28 /Applications/microchip/xc8/v1.41/sources/common/lwtoft.c
 [v ___lwtoft __lwtoft `(f  1 e 3 0 ]
-"15 /Applications/microchip/xc8/v1.41/sources/common/Umul16.c
-[v ___wmul __wmul `(ui  1 e 2 0 ]
 "6 /Applications/microchip/xc8/v1.41/sources/pic/eeprom.c
 [v _eecpymem eecpymem `(v  1 e 1 0 ]
 "39
 [v _memcpyee memcpyee `(v  1 e 1 0 ]
-"36 /Users/dkg/Projects/Beethovan.X/main.c
+"51 /Users/dkg/Projects/Beethovan.X/main.c
 [v _main main `(v  1 e 1 0 ]
-"97
+"123
+[v _playIntro playIntro `(v  1 e 1 0 ]
+"156
 [v _init init `(v  1 e 1 0 ]
-"120
+"177
 [v _pwmGenerator pwmGenerator `(i  1 e 2 0 ]
 "158 /Applications/microchip/xc8/v1.41/include/pic12f683.h
 [v _GPIO GPIO `VEuc  1 e 1 @5 ]
@@ -59,36 +61,32 @@
 [v _ANSEL ANSEL `VEuc  1 e 1 @159 ]
 "1933
 [v _T1GSS T1GSS `VEb  1 e 0 @209 ]
-"36 /Users/dkg/Projects/Beethovan.X/main.c
+"51 /Users/dkg/Projects/Beethovan.X/main.c
 [v _main main `(v  1 e 1 0 ]
 {
-"50
-[v main@pulse_width pulse_width `ui  1 a 2 71 ]
-[v main@dist dist `ui  1 a 2 69 ]
-"49
-[v main@t1gp_high t1gp_high `b  1 s 0 t1gp_high ]
-[v main@got_dist got_dist `b  1 s 0 got_dist ]
-[v main@trig trig `b  1 s 0 trig ]
-"95
+"52
+[v main@pulse_width pulse_width `ui  1 a 2 77 ]
+"53
+[v main@dist dist `uc  1 a 1 79 ]
+"118
 } 0
-"120
+"123
+[v _playIntro playIntro `(v  1 e 1 0 ]
+{
+"152
+} 0
+"177
 [v _pwmGenerator pwmGenerator `(i  1 e 2 0 ]
 {
-"160
-[v pwmGenerator@lsb lsb `i  1 a 2 9 ]
-"121
-[v pwmGenerator@tosc tosc `f  1 a 3 6 ]
-"123
-[v pwmGenerator@duty duty `f  1 a 3 3 ]
-"121
-[v pwmGenerator@period period `f  1 a 3 0 ]
-"122
-[v pwmGenerator@scaler scaler `i  1 a 2 18 ]
-[v pwmGenerator@pr2 pr2 `i  1 a 2 16 ]
-[v pwmGenerator@ccp ccp `i  1 a 2 14 ]
-"120
+"206
+[v pwmGenerator@lsb lsb `i  1 a 2 66 ]
+"178
+[v pwmGenerator@scaler scaler `i  1 a 2 72 ]
+[v pwmGenerator@ccp ccp `i  1 a 2 70 ]
+[v pwmGenerator@pr2 pr2 `i  1 a 2 68 ]
+"177
 [v pwmGenerator@freq freq `i  1 p 2 59 ]
-"171
+"212
 } 0
 "44 /Applications/microchip/xc8/v1.41/sources/common/fttol.c
 [v ___fttol __fttol `(l  1 e 4 0 ]
@@ -151,20 +149,23 @@
 [v ___awtoft@c c `i  1 p 2 8 ]
 "42
 } 0
-"97 /Users/dkg/Projects/Beethovan.X/main.c
+"6 /Applications/microchip/xc8/v1.41/sources/common/awdiv.c
+[v ___awdiv __awdiv `(i  1 e 2 0 ]
+{
+"11
+[v ___awdiv@quotient quotient `i  1 a 2 7 ]
+"12
+[v ___awdiv@sign sign `uc  1 a 1 6 ]
+[v ___awdiv@counter counter `uc  1 a 1 5 ]
+"6
+[v ___awdiv@divisor divisor `i  1 p 2 0 ]
+[v ___awdiv@dividend dividend `i  1 p 2 2 ]
+"42
+} 0
+"156 /Users/dkg/Projects/Beethovan.X/main.c
 [v _init init `(v  1 e 1 0 ]
 {
-"115
-} 0
-"15 /Applications/microchip/xc8/v1.41/sources/common/Umul16.c
-[v ___wmul __wmul `(ui  1 e 2 0 ]
-{
-"17
-[v ___wmul@product product `ui  1 a 2 4 ]
-"15
-[v ___wmul@multiplier multiplier `ui  1 p 2 0 ]
-[v ___wmul@multiplicand multiplicand `ui  1 p 2 2 ]
-"53
+"172
 } 0
 "28 /Applications/microchip/xc8/v1.41/sources/common/lwtoft.c
 [v ___lwtoft __lwtoft `(f  1 e 3 0 ]
