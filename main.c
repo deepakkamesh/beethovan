@@ -25,7 +25,7 @@
 
 #define _XTAL_FREQ 4000000
 #define TOSC (1 / (float) _XTAL_FREQ)
-#define DUTY 0.4 // PWM Duty Cycle.
+#define DUTY 0.8 // PWM Duty Cycle.
 #define STEP 3 // Dist in cm when the note changes.
 #define P(x) pwmGenerator(x)
 #define S(x) __delay_ms(x*400)
